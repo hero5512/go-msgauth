@@ -99,7 +99,7 @@ func inspectEmailCmd(ctx *cli.Context) error {
 	}
 	fmt.Printf("Signature: %08X\n", sig)
 	fmt.Printf("Hex Data: %08X\n", toSignData)
-	fmt.Println("Raw Data: ", string(toSignData))
+	fmt.Println("Raw Data: \n", string(toSignData))
 	return nil
 }
 
