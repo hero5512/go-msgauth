@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"math/big"
 	"net"
 	"strings"
 
@@ -18,27 +19,31 @@ type verifier interface {
 	Verify(hash crypto.Hash, hashed []byte, sig []byte) error
 }
 
-type rsaVerifier struct {
+type RsaVerifier struct {
 	*rsa.PublicKey
 }
 
-func (v rsaVerifier) Public() crypto.PublicKey {
+func (v RsaVerifier) Public() crypto.PublicKey {
 	return v.PublicKey
 }
 
-func (v rsaVerifier) Verify(hash crypto.Hash, hashed, sig []byte) error {
+func (v RsaVerifier) GetPublicData() (*big.Int, int) {
+	return v.N, v.E
+}
+
+func (v RsaVerifier) Verify(hash crypto.Hash, hashed, sig []byte) error {
 	return rsa.VerifyPKCS1v15(v.PublicKey, hash, hashed, sig)
 }
 
-type ed25519Verifier struct {
+type Ed25519Verifier struct {
 	ed25519.PublicKey
 }
 
-func (v ed25519Verifier) Public() crypto.PublicKey {
+func (v Ed25519Verifier) Public() crypto.PublicKey {
 	return v.PublicKey
 }
 
-func (v ed25519Verifier) Verify(hash crypto.Hash, hashed, sig []byte) error {
+func (v Ed25519Verifier) Verify(hash crypto.Hash, hashed, sig []byte) error {
 	if !ed25519.Verify(v.PublicKey, hashed, sig) {
 		return errors.New("dkim: invalid Ed25519 signature")
 	}
@@ -136,14 +141,14 @@ func parsePublicKey(s string) (*queryResult, error) {
 		if rsaPub.Size()*8 < 1024 {
 			return nil, permFailError(fmt.Sprintf("key is too short: want 1024 bits, has %v bits", rsaPub.Size()*8))
 		}
-		res.Verifier = rsaVerifier{rsaPub}
+		res.Verifier = RsaVerifier{rsaPub}
 		res.KeyAlgo = "rsa"
 	case "ed25519":
 		if len(b) != ed25519.PublicKeySize {
 			return nil, permFailError(fmt.Sprintf("invalid Ed25519 public key size: %v bytes", len(b)))
 		}
 		ed25519Pub := ed25519.PublicKey(b)
-		res.Verifier = ed25519Verifier{ed25519Pub}
+		res.Verifier = Ed25519Verifier{ed25519Pub}
 		res.KeyAlgo = "ed25519"
 	default:
 		return nil, permFailError("unsupported key algorithm")

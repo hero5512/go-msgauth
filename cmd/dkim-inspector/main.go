@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/rsa"
 	"fmt"
 	"os"
 
@@ -78,12 +77,12 @@ func dnsQueryCmd(ctx *cli.Context) error {
 		return err
 	}
 
-	pub, ok := res.Verifier.Public().(rsa.PublicKey)
-	if !ok {
+	N, E := res.Verifier.(dkim.RsaVerifier).GetPublicData()
+	if N == nil {
 		return fmt.Errorf("parse rsa public key error")
 	}
-	fmt.Printf("modulus:  %#x\n", pub.N.Bytes())
-	fmt.Printf("exponent: %08X\n", pub.E)
+	fmt.Printf("modulus:  %#x\n", N.Bytes())
+	fmt.Printf("exponent: %08X\n", E)
 	return nil
 }
 
