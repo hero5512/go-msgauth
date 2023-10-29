@@ -219,7 +219,7 @@ func InspectEmail(r io.Reader) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	if len(h) > 0 {
+	if len(h) > 1 {
 		return nil, nil, ErrTooManySignatures
 	}
 
