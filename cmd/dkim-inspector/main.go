@@ -58,7 +58,7 @@ var inspectEmailCommand = &cli.Command{
 	Name:      "inspect",
 	Flags:     []cli.Flag{fileFlag},
 	ArgsUsage: "<domain> <selector>",
-	Usage:     "retrieve public key from dns",
+	Usage:     "extract signature and signed data from email",
 }
 
 var retrieveDnsCommand = &cli.Command{
