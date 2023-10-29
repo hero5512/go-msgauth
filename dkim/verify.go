@@ -2,6 +2,7 @@ package dkim
 
 import (
 	"bufio"
+	"bytes"
 	"crypto"
 	"crypto/subtle"
 	"encoding/base64"
@@ -9,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -207,6 +209,72 @@ func parallelVerify(r io.Reader, h header, signatures []*signature, options *Ver
 		}
 	}
 	return verifications, nil
+}
+
+func InspectEmail(r io.Reader) ([]byte, []byte, error) {
+	// Read header
+	bufr := bufio.NewReader(r)
+	h, err := readHeader(bufr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(h) > 0 {
+		return nil, nil, ErrTooManySignatures
+	}
+
+	_, v := parseHeaderField(h[0])
+
+	params, err := parseHeaderParams(v)
+	if err != nil {
+		return nil, nil, permFailError("malformed signature tags: " + err.Error())
+	}
+
+	headerKeys := parseTagList(params["h"])
+	ok := false
+	for _, k := range headerKeys {
+		if strings.EqualFold(k, "from") {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return nil, nil, permFailError("From field not signed")
+	}
+	headerCan, _ := parseCanonicalization(params["c"])
+	if _, ok := canonicalizers[headerCan]; !ok {
+		return nil, nil, permFailError("unsupported header canonicalization algorithm")
+	}
+
+	sig, err := decodeBase64String(params["b"])
+	if err != nil {
+		return nil, nil, permFailError("malformed signature: " + err.Error())
+	}
+
+	// Compute data to be signed
+	buffer := bytes.NewBuffer([]byte{})
+	picker := newHeaderPicker(h)
+	for _, key := range headerKeys {
+		kv := picker.Pick(key)
+		if kv == "" {
+			continue
+		}
+		kv = canonicalizers[headerCan].CanonicalizeHeader(kv)
+		if _, err := buffer.Write([]byte(kv)); err != nil {
+			return nil, nil, err
+		}
+	}
+	canSigField := removeSignature(h[0])
+	canSigField = canonicalizers[headerCan].CanonicalizeHeader(canSigField)
+	canSigField = strings.TrimRight(canSigField, "\r\n")
+	if _, err := buffer.Write([]byte(canSigField)); err != nil {
+		return nil, nil, err
+	}
+	return sig, buffer.Bytes(), nil
+}
+
+func RetriveDnsTxt(domain, selector string) (*queryResult, error) {
+	return queryDNSTXT(domain, stripWhitespace(selector), net.LookupTXT)
 }
 
 func verify(h header, r io.Reader, sigField, sigValue string, options *VerifyOptions) (*Verification, error) {
