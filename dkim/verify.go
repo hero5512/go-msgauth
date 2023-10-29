@@ -219,13 +219,22 @@ func InspectEmail(r io.Reader) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	if len(h) > 1 {
+	// Scan header fields for signatures
+	var signatures []*signature
+	for i, kv := range h {
+		k, v := parseHeaderField(kv)
+		if strings.EqualFold(k, headerFieldName) {
+			signatures = append(signatures, &signature{i, v})
+		}
+	}
+
+	if len(signatures) > 1 {
 		return nil, nil, ErrTooManySignatures
 	}
 
-	_, v := parseHeaderField(h[0])
+	tags := h[signatures[0].i]
 
-	params, err := parseHeaderParams(v)
+	params, err := parseHeaderParams(signatures[0].v)
 	if err != nil {
 		return nil, nil, permFailError("malformed signature tags: " + err.Error())
 	}
@@ -264,7 +273,7 @@ func InspectEmail(r io.Reader) ([]byte, []byte, error) {
 			return nil, nil, err
 		}
 	}
-	canSigField := removeSignature(h[0])
+	canSigField := removeSignature(tags)
 	canSigField = canonicalizers[headerCan].CanonicalizeHeader(canSigField)
 	canSigField = strings.TrimRight(canSigField, "\r\n")
 	if _, err := buffer.Write([]byte(canSigField)); err != nil {
