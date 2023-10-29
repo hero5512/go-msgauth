@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/emersion/go-msgauth/dkim"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/urfave/cli/v2"
 )
 
@@ -103,8 +102,6 @@ func inspectEmailCmd(ctx *cli.Context) error {
 }
 
 func main() {
-	log.Root().SetHandler(log.LvlFilterHandler(log.LvlInfo, log.StreamHandler(os.Stderr, log.TerminalFormat(true))))
-
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
