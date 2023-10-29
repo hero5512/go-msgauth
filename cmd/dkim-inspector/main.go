@@ -81,7 +81,7 @@ func dnsQueryCmd(ctx *cli.Context) error {
 	if N == nil {
 		return fmt.Errorf("parse rsa public key error")
 	}
-	fmt.Printf("modulus:  %#x\n", N.Bytes())
+	fmt.Printf("modulus:  %x\n", N.Bytes())
 	fmt.Printf("exponent: %08X\n", E)
 	return nil
 }
