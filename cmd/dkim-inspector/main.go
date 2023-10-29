@@ -13,20 +13,20 @@ var (
 		Name:     "domain",
 		Aliases:  []string{"d"},
 		Required: true,
-		Usage:    "Path to the Ethereum contract ABI json to bind, - for STDIN",
+		Usage:    "dns domain",
 	}
 	selectorFlag = &cli.StringFlag{
 		Name:    "selector",
 		Aliases: []string{"s"},
 
 		Required: true,
-		Usage:    "Path to the Ethereum contract ABI json to bind, - for STDIN",
+		Usage:    "dns selector",
 	}
 	fileFlag = &cli.StringFlag{
 		Name:    "path",
 		Aliases: []string{"f"},
 		Value:   "./email.eml",
-		Usage:   "Path to the Ethereum contract ABI json to bind, - for STDIN",
+		Usage:   "email path",
 	}
 )
 
