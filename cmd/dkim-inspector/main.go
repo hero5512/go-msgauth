@@ -55,7 +55,7 @@ var inspectEmailCommand = &cli.Command{
 	Action:    inspectEmailCmd,
 	Name:      "inspect",
 	Flags:     []cli.Flag{fileFlag},
-	ArgsUsage: "<domain> <selector>",
+	ArgsUsage: "<file>",
 	Usage:     "extract signature and signed data from email",
 }
 
